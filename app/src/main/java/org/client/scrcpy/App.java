@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -12,6 +13,12 @@ import org.client.scrcpy.utils.ExecUtil;
 import org.client.scrcpy.utils.PreUtils;
 import org.client.scrcpy.utils.ThreadUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.UUID;
@@ -29,7 +36,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
     public void onCreate() {
         super.onCreate();
         init();  // 初始化id 数据
-        startAdbServer();
     }
 
     @Override
@@ -67,11 +73,48 @@ public class App extends Application implements Application.ActivityLifecycleCal
         ThreadUtils.execute(() -> {
             // 启动 adb 服务
             Log.i("Scrcpy", "start adb server ...");
+            copyAdbKeys();
             adbCmd("kill-server");
             adbCmd("start-server");
             // 启动完毕，重置为false，使其下次可以被重新调用
             startAdbRun = false;
         });
+    }
+
+    private static void copyAdbKeys() {
+        File adbKey = new File(mContext.getFilesDir(), ".android/adbkey");
+        if (!adbKey.exists()) {
+            try {
+                File documents = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+                File adb_key = new File(documents, "adb_key");
+                File adb_key_pub = new File(documents, "adb_key.pub");
+
+                if (adb_key.exists() && adb_key_pub.exists()) {
+                    adbKey.getParentFile().mkdirs();
+                    InputStream in = new FileInputStream(adb_key);
+                    OutputStream out = new FileOutputStream(adbKey);
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while ((len = in.read(buf)) > 0) {
+                        out.write(buf, 0, len);
+                    }
+                    in.close();
+                    out.close();
+
+                    File adbPubKey = new File(mContext.getFilesDir(), ".android/adbkey.pub");
+                    in = new FileInputStream(adb_key_pub);
+                    out = new FileOutputStream(adbPubKey);
+                    buf = new byte[1024];
+                    while ((len = in.read(buf)) > 0) {
+                        out.write(buf, 0, len);
+                    }
+                    in.close();
+                    out.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 

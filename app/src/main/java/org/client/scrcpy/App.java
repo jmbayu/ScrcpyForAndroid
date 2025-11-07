@@ -35,7 +35,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Override
     public void onCreate() {
         super.onCreate();
-        init();  // 初始化id 数据
+        init();  // Initialize id data
     }
 
     @Override
@@ -53,7 +53,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     public static Activity getCurActivity() {
-        // 获取最新的一个 activity
+        // Get the latest activity
         try {
             return activityList.getFirst();
         } catch (Exception ignore) {
@@ -62,31 +62,30 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     /**
-     * 启动 adb 服务
+     * Start adb service
      */
     public static void startAdbServer() {
         if (startAdbRun) {
-            // 当前正在启动过程中，退出
+            // currently starting, exit
             return;
         }
         startAdbRun = true;
         ThreadUtils.execute(() -> {
-            // 启动 adb 服务
+            // Start adb service
             Log.i("Scrcpy", "start adb server ...");
             copyAdbKeys();
             adbCmd("kill-server");
             adbCmd("start-server");
-            // 启动完毕，重置为false，使其下次可以被重新调用
+            // After startup, reset to false so that it can be recalled next time
             startAdbRun = false;
         });
     }
 
     private static void copyAdbKeys() {
         File adbKey = new File(mContext.getFilesDir(), ".android/adbkey");
-        if (!adbKey.exists()) {
-            try {
-                File documents = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
-                File adb_key = new File(documents, "adb_key");
+        try {
+            File documents = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+            File adb_key = new File(documents, "adb_key");
                 File adb_key_pub = new File(documents, "adb_key.pub");
 
                 if (adb_key.exists() && adb_key_pub.exists()) {
@@ -114,7 +113,6 @@ public class App extends Application implements Application.ActivityLifecycleCal
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
     }
 
 
